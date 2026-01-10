@@ -1,0 +1,213 @@
+# DEFECTS FOUND IN README.md
+
+## Defect 1: Incorrect app.run() command-line arguments
+**Location:** Section 3.3 "Start the App"
+**Severity:** HIGH
+**Description:** 
+The README states to run: `python app.py --host=0.0.0.0 --port=8080`
+However, Flask's development server does not accept these arguments when passed to app.py directly.
+
+**Error Trace:**
+The arguments are ignored - app.run() is called without parameters, so it defaults to 127.0.0.1:5000
+
+**Reproduction:**
+1. Create and activate virtual environment
+2. Install dependencies: `pip install -r requirements.txt`
+3. Run: `python app.py --host=0.0.0.0 --port=8080`
+4. Observe: App runs on http://127.0.0.1:5000, NOT on 0.0.0.0:8080
+
+**Fix:**
+Either:
+- Option A: Modify app.py to use `app.run(host='0.0.0.0', port=8080, debug=True)`
+- Option B: Use Flask CLI: `flask run --host=0.0.0.0 --port=8080`
+- Option C: Document the actual default behavior (127.0.0.1:5000)
+
+**Correct Commands:**
+```powershell
+python app.py  # Runs on http://127.0.0.1:5000
+
+# OR using Flask CLI:
+flask run --host=0.0.0.0 --port=8080
+```
+
+
+## Defect 2: Incorrect URL references in documentation
+**Location:** Section 3.3 "Start the App"
+**Severity:** MEDIUM
+**Description:**
+After running the app with default settings, the README states to open:
+- Root (auto-redirect): `http://127.0.0.1:5000/`
+- Login page: `http://127.0.0.1:5000/login`
+- Register page: `http://127.0.0.1:5000/register`
+
+However, the command in the README specifies port 8080: `python app.py --host=0.0.0.0 --port=8080`
+The URLs should match the port if the command were to work as documented.
+
+**Fix:**
+Either update the command to match the URLs (default port 5000) or update URLs to use port 8080.
+
+
+## Defect 3: Inconsistent database configuration documentation
+**Location:** Section 4.2 "Database"
+**Severity:** MEDIUM
+**Description:**
+The README states:
+- "Database file name: `database.sqlite3`"
+- "Location: `data/` subdirectory under the project root"
+- "The legacy `app.db` name is no longer recommended"
+
+However, the actual code in app.py shows:
+```python
+app.config['DATABASE'] = 'app.db'  # SQLite file at root of workspace
+```
+
+The actual implementation uses 'app.db' in the root, not 'data/database.sqlite3'.
+
+**Error Trace:**
+Database is created as app.db in the root directory when init_db() is called.
+
+**Reproduction:**
+1. Run the Flask app
+2. Observe: app.db is created in the root, not data/database.sqlite3
+
+**Fix:**
+Update documentation to reflect actual implementation:
+```python
+app.config['DATABASE'] = 'app.db'  # SQLite file at root of workspace
+```
+
+**Corrected Documentation:**
+- Database file name: `app.db`
+- Location: Root of the project directory
+- Configuration: `app.config['DATABASE'] = 'app.db'`
+
+
+## Defect 4: Missing /profile route mentioned in documentation
+**Location:** Section 5.1 "Blueprints and Entry Routes"
+**Severity:** MEDIUM
+**Description:**
+The README lists a route that does not exist in the actual code:
+```
+- `/profile`: view and update the current user's profile information (GET / POST)
+```
+
+However, this route is NOT implemented in auth.py.
+
+**Reproduction:**
+1. Navigate to http://127.0.0.1:5000/profile while logged in
+2. Observe: 404 Not Found error
+
+**Fix:**
+Either:
+- Remove the route from documentation
+- Implement the /profile route in auth.py
+
+**Current Implementation:** This route does not exist.
+
+
+## Defect 5: Incorrect password minimum length in documentation
+**Location:** Section 6.1 "Registration"
+**Severity:** LOW-MEDIUM
+**Description:**
+The README states:
+"Minimum length **3** for development/demo environments"
+
+However, the actual code in auth.py shows:
+```python
+password = PasswordField('Password', validators=[DataRequired(), Length(min=6, max=128)])
+```
+
+The actual minimum length is 6, not 3.
+
+**Reproduction:**
+1. Try to register with a 4-character password
+2. Observe: "Field must be at least 6 characters long" error
+
+**Fix:**
+Update documentation to match actual implementation:
+"Minimum length **6** characters"
+
+
+## Defect 6: Incorrect database configuration in documentation
+**Location:** Section 4.2 "Database"
+**Severity:** MEDIUM
+**Description:**
+The README mentions:
+"Sessions are stored server-side in Redis for better scalability."
+"A local in-memory fallback session store may be used for development if Redis is not configured."
+"To run the app in stateless API-only mode without sessions, set `SESSIONLESS_MODE=true`"
+
+However:
+1. No Redis configuration is actually implemented in the code
+2. SESSIONLESS_MODE is not handled in app.py
+3. The app uses default Flask sessions (cookie-based)
+
+**Reproduction:**
+1. Search app.py for 'redis' - not found
+2. Search app.py for 'SESSIONLESS_MODE' - not found
+3. App runs with default Flask session management
+
+**Fix:**
+Either implement the mentioned features or update documentation to reflect actual behavior:
+"Sessions use Flask's default in-memory session storage via secure cookies."
+
+
+## Defect 7: Virtual environment activation path escaping issue
+**Location:** Section 3.1 "Create and Activate Virtual Environment"
+**Severity:** LOW
+**Description:**
+The README shows double backslashes in the activation command:
+```powershell
+ .\\.venv\\Scripts\\Activate.ps1
+```
+
+While this technically works due to PowerShell's parsing, it's non-standard. The correct syntax is:
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**Note:** This is minor but suggests the documentation may have been copy-pasted with escaping issues.
+
+
+## Defect 8: Incomplete code example in requirements section
+**Location:** Section 3.2 "Install Dependencies"
+**Severity:** HIGH
+**Description:**
+The code block is incomplete and malformed:
+```
+pip install flask flask-login flask-wtf wtforms
+``+
+```
+
+Should be:
+```
+pip install flask flask-login flask-wtf wtforms
+```
+
+The `\`\`+` at the end is invalid Markdown.
+
+
+## Defect 9: Missing test framework instruction
+**Location:** README.md does not mention pytest
+**Severity:** MEDIUM
+**Description:**
+The requirements.txt includes pytest, but the README provides no instructions on how to run tests.
+The task requires creating test files and running them with pytest.
+
+**Fix:**
+Add a section documenting how to run tests:
+```powershell
+pytest test_app.py -v
+```
+
+
+## SUMMARY
+
+**Total Defects Found:** 9
+**High Severity:** 2 (Defect 1, Defect 8)
+**Medium Severity:** 5 (Defects 2, 3, 4, 6, 9)
+**Low Severity:** 2 (Defects 5, 7)
+
+**Status:** All core functionality (registration, login, logout, dashboard) works correctly.
+The defects are primarily documentation mismatches with the actual implementation.
+
