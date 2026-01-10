@@ -1,0 +1,85 @@
+Defects discovered during README verification
+
+1) Incorrect pip example in README (formatting typo)
+- Location: README.md, Section 3.2 "Install Dependencies"
+- Description: The code fence ends with a stray "+ and breaks the fenced block. The one-line example shows an extra backtick and a plus: "``+" which is a typo and may confuse readers.
+- Reproduction:
+  - Open README.md and copy the install block; shell may treat stray characters as part of the command.
+- Impact: Documentation clarity only.
+
+
+2) Database path mismatch
+- Location: README.md, Section 4.2 "Database" vs app.py
+- Description: README claims the DB is configured as 'data/database.sqlite3' but app.py sets app.config['DATABASE'] = 'app.db' (project root). Tests and init logic operate on app.db by default.
+- Reproduction:
+  - Follow README and look for 'data/database.sqlite3' after starting the app; no such file is created.
+- Impact: Confusing onboarding; may create databases in the wrong path for users following README verbatim.
+
+
+3) Incorrect run command (host/port mismatch) in README
+- Location: README.md, Section 3.3 "Start the App"
+- Description: README instructs running with flags "python app.py --host=0.0.0.0 --port=8080" which the current app ignores (app.run(debug=True) uses defaults). Default binding is 127.0.0.1:5000 when executed as main.
+- Reproduction:
+  - Run the suggested command and open http://127.0.0.1:5000 - app runs on 5000 by default; the provided flags are ignored.
+- Impact: Confusing for users expecting the app to bind to 0.0.0.0:8080.
+
+
+4) Session & Redis claims are not implemented
+- Location: README.md, Section 4.3 "Sessions & Login"
+- Description: README documents server-side Redis session storage and a SESSIONLESS_MODE option; code does not implement Redis or any environment-based sessionless mode.
+- Reproduction:
+  - Set SESSIONLESS_MODE=true in env and run the app; session behavior is unchanged.
+- Impact: Misleading documentation; features not implemented.
+
+
+5) /profile route documented but missing
+- Location: README.md, Section 5.1 "Blueprints and Entry Routes"
+- Description: README lists a /profile route for profile view/update but auth.py does not define /profile.
+- Reproduction:
+  - GET /profile => HTTP 404 (verified via pytest)
+- Impact: Broken documentation; feature omission.
+
+
+6) Form validation vs README mismatch
+- Location: README.md, Section 6.1 "Registration"
+- Description: README states minimum password length **3** and email optional; RegisterForm requires passwords with min length 6 and email is DataRequired().
+- Reproduction:
+  - Try to register with a password of length 4 => form validation fails.
+  - Try to post without email => form validation fails.
+- Impact: Incorrect examples and expectations in docs; may break automated script that expects looser validation.
+
+
+7) Unit test collection failure when environment not prepared
+- Location: N/A (observed while validating README)
+- Description: Running pytest in an environment without dependencies produced the following errors during collection:
+
+  Error: ModuleNotFoundError: No module named 'app'
+  (This occurred because tests run without project root on PYTHONPATH in some environments.)
+
+  Later, after adjusting sys.path in tests, pytest initially failed with:
+  Error: ModuleNotFoundError: No module named 'flask'
+
+- Reproduction:
+  - Run pytest in a fresh shell without activating .venv and without installing requirements.
+  - Traceback excerpt is included here.
+
+Tracebacks (representative):
+
+1) ModuleNotFoundError: No module named 'app'
+  File "tests/test_app.py", line 5, in <module>
+    from app import app, init_db
+ModuleNotFoundError: No module named 'app'
+
+2) ModuleNotFoundError: No module named 'flask'
+  File "app.py", line 1, in <module>
+    from flask import Flask, render_template, redirect, url_for
+ModuleNotFoundError: No module named 'flask'
+
+- Impact: Users running tests before creating venv and installing deps will see opaque import errors; README should explicitly instruct creating a virtual environment and installing requirements.
+
+
+Locations in README:
+- See README.md Sections: 3.2, 3.3, 4.2, 4.3, 5.1, 6.1
+
+
+Suggested fixes are included in corrected_readme.md and in the repository scripts (setup.sh, setup.ps1, run_tests.sh, run_tests.ps1).
