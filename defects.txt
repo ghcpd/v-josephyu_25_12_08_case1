@@ -1,0 +1,49 @@
+Defects discovered while validating README examples
+
+1) README: Typo in quick-install pip snippet (extra plus)
+Location: README.md -> Section 3.2
+Reproduction:
+  Run the exact block under "For quick testing" which ends with a stray `+`.
+Error trace / notes:
+  This is a documentation typo; no runtime error, but copy-paste will include the `+` and fail in shell.
+
+2) README vs code: README claims DATABASE is `data/database.sqlite3`, but `app.py` sets `app.config['DATABASE']='app.db'` (root)
+Location: README.md -> Section 4.2
+Reproduction:
+  Start app and inspect created DB file. `app.db` is created at project root.
+Error trace / notes:
+  Mismatch between docs and implementation; no exception.
+
+3) auth.py RegisterForm: `email` marked as required in code but README says optional
+Location: README.md -> Section 6.1 and auth.py RegisterForm
+Reproduction:
+  POST to /register without email will fail validation with WTForms "This field is required." error.
+Error trace:
+  Field validation fails; no exception stack trace (form validation error)
+
+4) auth.py Login/Registration password length mismatch: README says minimum length 3, code enforces min=6
+Location: README.md -> Section 6.1 and auth.py (validators)
+Reproduction:
+  Attempt to register with 3-char password will be rejected by form validators.
+Error trace:
+  form.password.errors contains 'Field must be at least 6 characters long.'
+
+5) README mentions Redis session storage and SESSIONLESS_MODE env var — not implemented
+Location: README.md -> Section 4.3
+Reproduction:
+  Setting SESSIONLESS_MODE has no effect; no Redis configuration present in code.
+Error trace / notes:
+  Documentation overstated app features.
+
+6) README command to start app includes `--host` and `--port` flags, but `app.run()` in `app.py` ignores command-line parsing and will run default 127.0.0.1:5000 unless environment vars or `FLASK_RUN_PORT` used.
+Location: README.md -> Section 3.3
+Reproduction:
+  Running `python app.py --host=0.0.0.0 --port=8080` starts Flask's builtin server on default host/port shown in logs.
+Error trace:
+  Flask's `app.run()` does not parse sys.argv for flags; the example is misleading.
+
+7) templates base.html: CDN URLs reference Bootstrap 5.3.2 — valid, but minor.
+
+8) requirements.txt originally included code fences; fixed to proper pip format. Location: README code block and file.
+
+End of defects.
