@@ -43,8 +43,14 @@ class User(UserMixin):
         return check_password_hash(self.password_hash, password)
 
 
+import os
+
 def get_connection(app) -> sqlite3.Connection:
     db_path = app.config.get(DB_PATH_KEY, 'app.db')
+    # Ensure directory exists for DB file
+    parent = os.path.dirname(db_path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn

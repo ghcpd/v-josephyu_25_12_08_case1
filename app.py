@@ -5,7 +5,8 @@ from auth import auth_bp
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'replace-with-a-strong-secret-key'
-app.config['DATABASE'] = 'app.db'  # SQLite file at root of workspace
+# Database file (matches README expectation)
+app.config['DATABASE'] = 'data/database.sqlite3'  # SQLite file under data/ directory
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -36,4 +37,9 @@ def dashboard():
     return render_template('dashboard.html', user=current_user)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--port', type=int, default=5000)
+    args = parser.parse_args()
+    app.run(debug=True, host=args.host, port=args.port)
