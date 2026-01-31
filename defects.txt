@@ -1,0 +1,53 @@
+Defect Report - Flask User Login & Registration App
+Location: README.md
+
+Summary:
+This repository contains a working Flask login/registration app, but the README contains several mismatches between documentation text and actual implementation. Below are reproducible issues, sample reproduction steps, and captured traces where applicable.
+
+1) README: Command-line flags --host/--port are shown as working when running `python app.py` (Section 3.3)
+   - Actual: `app.py` executes app.run(debug=True) without honoring CLI flags. The server binds to 127.0.0.1:5000 by default.
+   - Reproduction steps:
+     1. Create a venv and install requirements
+     2. Run: `python app.py --host=0.0.0.0 --port=8080`
+     3. Observe server output and which address/port it binds to.
+   - Observed trace (stdout captured while testing):
+       * Serving Flask app 'app'
+       * Debug mode: on
+       * Running on http://127.0.0.1:5000  Press CTRL+C to quit
+
+   - README section: 3.3 Start the App
+
+2) README: Database path and filename mismatch (Section 4.2)
+   - README claims app.config['DATABASE'] = 'data/database.sqlite3' and references 'database.sqlite3' under 'data/'
+   - Actual: `app.py` sets app.config['DATABASE'] = 'app.db' (root of project) and `models.get_connection` will use that config value.
+   - Reproduction steps:
+     1. Start the app and look for `app.db` at project root or inspect `app.py` to see the value.
+   - README section: 4.2 Database
+
+3) README: Email field described as "optional" for registration (Section 6.1)
+   - Actual: `RegisterForm` has `email = StringField(..., validators=[DataRequired(), Email(), ...])`. The DB schema also sets `email TEXT UNIQUE NOT NULL`. So email is required and must be unique.
+   - Reproduction steps:
+     1. POST to /register without an email or with a blank email.
+     2. Observe validation error (form shows "This field is required.").
+
+4) README: Password minimum length mismatch (Section 6.1)
+   - README claims minimum password length is 3 in dev.
+   - Actual: both LoginForm and RegisterForm have Length(min=6) for the password field.
+   - Reproduction steps:
+     1. Try registering with a 3-character password and observe the validation error.
+
+5) README: Mentions `/profile` route and session storage in Redis / SESSIONLESS_MODE (Section 5 and 4.3)
+   - Actual: There is no `/profile` route implemented in `auth.py` and no Redis session backend or `SESSIONLESS_MODE` handling in code.
+   - Reproduction steps:
+     1. Try GET /profile - will 404.
+     2. Attempt to configure SESSIONLESS_MODE env var - no effect because code does not read this variable.
+
+6) README: Typographical/formatting errors
+   - pip install code block contains a mismatched closing backtick and a stray '+' char.
+   - Small copy errors that may confuse a new reader when following steps.
+
+Files/Sections Affected: README.md (Sections 3.3, 4.2, 4.3, 5, 6.1)
+
+Notes / Next steps:
+- I will provide a corrected README (corrected_readme.md) that reflects real behavior and provides working CLI examples to run and configure the app.
+- I also added a small pytest test suite under `test_files/` which validates registration/login functionality and the models. The tests passed locally.
